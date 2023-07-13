@@ -1,0 +1,71 @@
+version: '3'
+
+services:
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: wordpress_db
+      MYSQL_USER: wordpress_user
+      MYSQL_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - tugas
+
+  wordpress:
+    image: wordpress
+    container_name: wordpress
+    restart: always
+    ports:
+      - 3000:80
+    volumes:
+      - wordpress:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_USER: wordpress_user
+      WORDPRESS_DB_PASSWORD: password
+      WORDPRESS_DB_NAME: wordpress_db
+    depends_on:
+      - mariadb
+    networks:
+      - tugas
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - 8081:80
+    environment:
+      PMA_HOST: mariadb
+      MYSQL_ROOT_PASSWORD: password
+    depends_on:
+      - mariadb
+    networks:
+      - tugas
+
+  nginx-webserver:
+    depends_on:
+      - wordpress
+    image: nginx:alpine
+    container_name: nginx-webserver
+    restart: unless-stopped
+    ports:
+      - 80:80
+    links:
+      - wordpress
+      - phpmyadmin
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - tugas
+
+volumes:
+  db_data:
+  wordpress:
+
+networks:
+  tugas:
